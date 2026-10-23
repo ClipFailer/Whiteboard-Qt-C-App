@@ -33,7 +33,7 @@ PropertiesPanel::PropertiesPanel(ToolManager* toolManager, CanvasScene* scene, Q
     , m_scene(scene)
     , m_currentProps(toolManager->defaultProperties())
 {
-    setFixedWidth(240);
+    setFixedWidth(260);
     setupUI();
     connect(m_scene, &QGraphicsScene::selectionChanged, this, &PropertiesPanel::updateFromSelection);
     updateFromSelection();
@@ -43,27 +43,28 @@ PropertiesPanel::PropertiesPanel(ToolManager* toolManager, CanvasScene* scene, Q
 void PropertiesPanel::setupUI()
 {
     auto* mainLayout = new QVBoxLayout(this);
-    mainLayout->setContentsMargins(10, 10, 10, 10);
-    mainLayout->setSpacing(12);
+    mainLayout->setContentsMargins(6, 6, 6, 6);
+    mainLayout->setSpacing(8);
 
     auto* scrollArea = new QScrollArea(this);
     m_scrollArea = scrollArea;
     scrollArea->setWidgetResizable(true);
     scrollArea->setFrameShape(QFrame::NoFrame);
+    scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 
     auto* container = new QWidget();
     m_container = container;
     auto* layout = new QVBoxLayout(container);
-    layout->setContentsMargins(0, 0, 0, 0);
-    layout->setSpacing(12);
+    layout->setContentsMargins(2, 2, 6, 2);
+    layout->setSpacing(10);
 
     // 1. Цвет обводки
-    auto* strokeBox = new QGroupBox(QStringLiteral("Stroke Color"), container);
+    auto* strokeBox = new QGroupBox(QStringLiteral("Цвет обводки"), container);
     auto* strokeLayout = new QVBoxLayout(strokeBox);
     strokeLayout->addWidget(createColorPalette(true));
-    m_customStrokeBtn = new QPushButton(QStringLiteral("Custom Color..."), strokeBox);
+    m_customStrokeBtn = new QPushButton(QStringLiteral("Другой цвет..."), strokeBox);
     connect(m_customStrokeBtn, &QPushButton::clicked, this, [this]() {
-        QColor col = QColorDialog::getColor(m_currentProps.strokeColor, this, QStringLiteral("Select Stroke Color"));
+        QColor col = QColorDialog::getColor(m_currentProps.strokeColor, this, QStringLiteral("Выберите цвет обводки"));
         if (col.isValid()) {
             onStrokeColorSelected(col);
         }
@@ -72,12 +73,12 @@ void PropertiesPanel::setupUI()
     layout->addWidget(strokeBox);
 
     // 2. Цвет заливки
-    auto* fillBox = new QGroupBox(QStringLiteral("Background Fill"), container);
+    auto* fillBox = new QGroupBox(QStringLiteral("Цвет заливки"), container);
     auto* fillLayout = new QVBoxLayout(fillBox);
     fillLayout->addWidget(createColorPalette(false));
-    m_customFillBtn = new QPushButton(QStringLiteral("Custom Color..."), fillBox);
+    m_customFillBtn = new QPushButton(QStringLiteral("Другой цвет..."), fillBox);
     connect(m_customFillBtn, &QPushButton::clicked, this, [this]() {
-        QColor col = QColorDialog::getColor(m_currentProps.fillColor, this, QStringLiteral("Select Fill Color"),
+        QColor col = QColorDialog::getColor(m_currentProps.fillColor, this, QStringLiteral("Выберите цвет заливки"),
                                             QColorDialog::ShowAlphaChannel);
         if (col.isValid()) {
             onFillColorSelected(col);
@@ -87,23 +88,23 @@ void PropertiesPanel::setupUI()
     layout->addWidget(fillBox);
 
     // 3. Стиль заливки
-    auto* fillStyleBox = new QGroupBox(QStringLiteral("Fill Style"), container);
+    auto* fillStyleBox = new QGroupBox(QStringLiteral("Стиль заливки"), container);
     auto* fsLayout = new QVBoxLayout(fillStyleBox);
     m_fillStyleCombo = new QComboBox(fillStyleBox);
-    m_fillStyleCombo->addItem(QStringLiteral("None"), static_cast<int>(FillStyle::None));
-    m_fillStyleCombo->addItem(QStringLiteral("Solid"), static_cast<int>(FillStyle::Solid));
-    m_fillStyleCombo->addItem(QStringLiteral("Hachure"), static_cast<int>(FillStyle::Hachure));
-    m_fillStyleCombo->addItem(QStringLiteral("Cross-Hachure"), static_cast<int>(FillStyle::CrossHachure));
+    m_fillStyleCombo->addItem(QStringLiteral("Без заливки"), static_cast<int>(FillStyle::None));
+    m_fillStyleCombo->addItem(QStringLiteral("Сплошная"), static_cast<int>(FillStyle::Solid));
+    m_fillStyleCombo->addItem(QStringLiteral("Штриховка"), static_cast<int>(FillStyle::Hachure));
+    m_fillStyleCombo->addItem(QStringLiteral("Перекрёстная"), static_cast<int>(FillStyle::CrossHachure));
     connect(m_fillStyleCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &PropertiesPanel::onFillStyleChanged);
     fsLayout->addWidget(m_fillStyleCombo);
     layout->addWidget(fillStyleBox);
 
-    // 4. Ширина обводки
-    auto* widthBox = new QGroupBox(QStringLiteral("Stroke Width"), container);
+    // 4. Толщина обводки
+    auto* widthBox = new QGroupBox(QStringLiteral("Толщина обводки"), container);
     auto* widthLayout = new QVBoxLayout(widthBox);
     auto* widthHeader = new QHBoxLayout();
     m_strokeWidthLabel = new QLabel(QStringLiteral("2 px"), widthBox);
-    widthHeader->addWidget(new QLabel(QStringLiteral("Width:"), widthBox));
+    widthHeader->addWidget(new QLabel(QStringLiteral("Толщина:"), widthBox));
     widthHeader->addStretch();
     widthHeader->addWidget(m_strokeWidthLabel);
     widthLayout->addLayout(widthHeader);
@@ -116,22 +117,22 @@ void PropertiesPanel::setupUI()
     layout->addWidget(widthBox);
 
     // 5. Стиль обводки
-    auto* strokeStyleBox = new QGroupBox(QStringLiteral("Stroke Style"), container);
+    auto* strokeStyleBox = new QGroupBox(QStringLiteral("Стиль линии"), container);
     auto* ssLayout = new QVBoxLayout(strokeStyleBox);
     m_strokeStyleCombo = new QComboBox(strokeStyleBox);
-    m_strokeStyleCombo->addItem(QStringLiteral("Solid"), static_cast<int>(Qt::SolidLine));
-    m_strokeStyleCombo->addItem(QStringLiteral("Dashed"), static_cast<int>(Qt::DashLine));
-    m_strokeStyleCombo->addItem(QStringLiteral("Dotted"), static_cast<int>(Qt::DotLine));
+    m_strokeStyleCombo->addItem(QStringLiteral("Сплошная"), static_cast<int>(Qt::SolidLine));
+    m_strokeStyleCombo->addItem(QStringLiteral("Штриховая"), static_cast<int>(Qt::DashLine));
+    m_strokeStyleCombo->addItem(QStringLiteral("Точечная"), static_cast<int>(Qt::DotLine));
     connect(m_strokeStyleCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &PropertiesPanel::onStrokeStyleChanged);
     ssLayout->addWidget(m_strokeStyleCombo);
     layout->addWidget(strokeStyleBox);
 
     // 6. Шероховатость (0 - 3)
-    auto* roughBox = new QGroupBox(QStringLiteral("Roughness"), container);
+    auto* roughBox = new QGroupBox(QStringLiteral("Шероховатость"), container);
     auto* roughLayout = new QVBoxLayout(roughBox);
     auto* roughHeader = new QHBoxLayout();
     m_roughnessLabel = new QLabel(QStringLiteral("1.5"), roughBox);
-    roughHeader->addWidget(new QLabel(QStringLiteral("Sloppiness:"), roughBox));
+    roughHeader->addWidget(new QLabel(QStringLiteral("Скетчевость:"), roughBox));
     roughHeader->addStretch();
     roughHeader->addWidget(m_roughnessLabel);
     roughLayout->addLayout(roughHeader);
@@ -144,11 +145,11 @@ void PropertiesPanel::setupUI()
     layout->addWidget(roughBox);
 
     // 7. Непрозрачность
-    auto* opacityBox = new QGroupBox(QStringLiteral("Opacity"), container);
+    auto* opacityBox = new QGroupBox(QStringLiteral("Непрозрачность"), container);
     auto* opLayout = new QVBoxLayout(opacityBox);
     auto* opHeader = new QHBoxLayout();
     m_opacityLabel = new QLabel(QStringLiteral("100%"), opacityBox);
-    opHeader->addWidget(new QLabel(QStringLiteral("Transparency:"), opacityBox));
+    opHeader->addWidget(new QLabel(QStringLiteral("Прозрачность:"), opacityBox));
     opHeader->addStretch();
     opHeader->addWidget(m_opacityLabel);
     opLayout->addLayout(opHeader);
@@ -161,38 +162,41 @@ void PropertiesPanel::setupUI()
     layout->addWidget(opacityBox);
 
     // 8. Секция выравнивания и распределения
-    auto* alignBox = new QGroupBox(QStringLiteral("Align & Distribute"), container);
+    auto* alignBox = new QGroupBox(QStringLiteral("Выравнивание"), container);
     m_alignBox = alignBox;
     auto* alignLayout = new QVBoxLayout(alignBox);
+    alignLayout->setSpacing(6);
 
     auto makeBtn = [](const QString& text, const QString& tip) {
         auto* b = new QPushButton(text);
         b->setToolTip(tip);
-        b->setFixedHeight(28);
+        b->setFixedHeight(26);
         return b;
     };
 
     auto* rowAlign = new QHBoxLayout();
-    rowAlign->setSpacing(3);
+    rowAlign->setSpacing(2);
     m_btnAlignLeft = makeBtn(QStringLiteral("⇤"), QStringLiteral("Выровнять по левому краю"));
-    m_btnAlignCenterH = makeBtn(QStringLiteral("⇥⇤"), QStringLiteral("Выровнять по горизонтальному центру"));
+    m_btnAlignCenterH = makeBtn(QStringLiteral("⇥⇤"), QStringLiteral("Выровнять по центру горизонтально"));
     m_btnAlignRight = makeBtn(QStringLiteral("⇥"), QStringLiteral("Выровнять по правому краю"));
-    m_btnAlignTop = makeBtn(QStringLiteral("⤒"), QStringLiteral("Выровнять по верху"));
-    m_btnAlignCenterV = makeBtn(QStringLiteral("↕"), QStringLiteral("Выровнять по вертикальному центру"));
-    m_btnAlignBottom = makeBtn(QStringLiteral("⤓"), QStringLiteral("Выровнять по низу"));
+    m_btnAlignTop = makeBtn(QStringLiteral("⤒"), QStringLiteral("Выровнять по верхнему краю"));
+    m_btnAlignCenterV = makeBtn(QStringLiteral("↕"), QStringLiteral("Выровнять по центру вертикально"));
+    m_btnAlignBottom = makeBtn(QStringLiteral("⤓"), QStringLiteral("Выровнять по нижнему краю"));
 
-    rowAlign->addWidget(m_btnAlignLeft);
-    rowAlign->addWidget(m_btnAlignCenterH);
-    rowAlign->addWidget(m_btnAlignRight);
-    rowAlign->addWidget(m_btnAlignTop);
-    rowAlign->addWidget(m_btnAlignCenterV);
-    rowAlign->addWidget(m_btnAlignBottom);
+    const QList<QPushButton*> alignButtons = {
+        m_btnAlignLeft, m_btnAlignCenterH, m_btnAlignRight,
+        m_btnAlignTop, m_btnAlignCenterV, m_btnAlignBottom
+    };
+    for (auto* btn : alignButtons) {
+        btn->setFixedWidth(32);
+        rowAlign->addWidget(btn);
+    }
     alignLayout->addLayout(rowAlign);
 
     auto* rowDist = new QHBoxLayout();
     rowDist->setSpacing(4);
-    m_btnDistributeH = makeBtn(QStringLiteral("↔ Распред. H"), QStringLiteral("Равное распределение по горизонтали"));
-    m_btnDistributeV = makeBtn(QStringLiteral("↕ Распред. V"), QStringLiteral("Равное распределение по вертикали"));
+    m_btnDistributeH = makeBtn(QStringLiteral("↔ По гор."), QStringLiteral("Равномерно распределить по горизонтали"));
+    m_btnDistributeV = makeBtn(QStringLiteral("↕ По верт."), QStringLiteral("Равномерно распределить по вертикали"));
     rowDist->addWidget(m_btnDistributeH);
     rowDist->addWidget(m_btnDistributeV);
     alignLayout->addLayout(rowDist);
@@ -208,27 +212,33 @@ void PropertiesPanel::setupUI()
     layout->addWidget(alignBox);
 
     // 9. Секция типографики (Шрифт, размер, выравнивание текста)
-    auto* typoBox = new QGroupBox(QStringLiteral("Typography"), container);
+    auto* typoBox = new QGroupBox(QStringLiteral("Типографика"), container);
     m_typographyBox = typoBox;
     auto* typoLayout = new QVBoxLayout(typoBox);
+    typoLayout->setSpacing(6);
 
     m_fontFamilyCombo = new QComboBox(typoBox);
     m_fontFamilyCombo->addItem(QStringLiteral("Рукописный"), QStringLiteral("Segoe Print"));
-    m_fontFamilyCombo->addItem(QStringLiteral("Sans-serif"), QStringLiteral("Segoe UI"));
+    m_fontFamilyCombo->addItem(QStringLiteral("Без засечек (Sans)"), QStringLiteral("Segoe UI"));
     m_fontFamilyCombo->addItem(QStringLiteral("Моноширинный"), QStringLiteral("Cascadia Code"));
     typoLayout->addWidget(m_fontFamilyCombo);
 
     auto* fontRow = new QHBoxLayout();
+    fontRow->setSpacing(4);
     m_fontSizeCombo = new QComboBox(typoBox);
-    m_fontSizeCombo->addItem(QStringLiteral("S (14px)"), 14);
-    m_fontSizeCombo->addItem(QStringLiteral("M (20px)"), 20);
-    m_fontSizeCombo->addItem(QStringLiteral("L (28px)"), 28);
-    m_fontSizeCombo->addItem(QStringLiteral("XL (36px)"), 36);
-    fontRow->addWidget(m_fontSizeCombo);
+    m_fontSizeCombo->addItem(QStringLiteral("S (14)"), 14);
+    m_fontSizeCombo->addItem(QStringLiteral("M (20)"), 20);
+    m_fontSizeCombo->addItem(QStringLiteral("L (28)"), 28);
+    m_fontSizeCombo->addItem(QStringLiteral("XL (36)"), 36);
+    fontRow->addWidget(m_fontSizeCombo, 1);
 
-    m_btnAlignTextLeft = makeBtn(QStringLiteral("Left"), QStringLiteral("По левому краю"));
-    m_btnAlignTextCenter = makeBtn(QStringLiteral("Center"), QStringLiteral("По центру"));
-    m_btnAlignTextRight = makeBtn(QStringLiteral("Right"), QStringLiteral("По правому краю"));
+    m_btnAlignTextLeft = makeBtn(QStringLiteral("⇤"), QStringLiteral("Выровнять текст по левому краю"));
+    m_btnAlignTextCenter = makeBtn(QStringLiteral("≡"), QStringLiteral("Выровнять текст по центру"));
+    m_btnAlignTextRight = makeBtn(QStringLiteral("⇥"), QStringLiteral("Выровнять текст по правому краю"));
+    m_btnAlignTextLeft->setFixedWidth(32);
+    m_btnAlignTextCenter->setFixedWidth(32);
+    m_btnAlignTextRight->setFixedWidth(32);
+
     fontRow->addWidget(m_btnAlignTextLeft);
     fontRow->addWidget(m_btnAlignTextCenter);
     fontRow->addWidget(m_btnAlignTextRight);
@@ -598,15 +608,20 @@ void PropertiesPanel::updateTheme(bool isDark)
         "  border-radius: 2px;"
         "}"
         "QScrollBar:vertical {"
-        "  background: %1;"
+        "  background: transparent;"
         "  width: 6px;"
-        "  border-radius: 3px;"
+        "  margin: 0px;"
         "}"
         "QScrollBar::handle:vertical {"
         "  background: %4;"
+        "  min-height: 20px;"
         "  border-radius: 3px;"
         "}"
+        "QScrollBar::handle:vertical:hover {"
+        "  background: #1971c2;"
+        "}"
         "QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }"
+        "QScrollBar:horizontal { height: 0px; background: transparent; }"
     ).arg(bgHex, txtHex, subTxtHex, borderHex, inputBgHex, inputBrHex, hoverHex));
 }
 
